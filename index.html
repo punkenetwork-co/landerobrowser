@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Mi Navegador</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --accent: #0a84ff; }
+
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #000; color: #fff; height: 100vh; display: flex; flex-direction: column; overflow: hidden; user-select: none; }
+  
+  /* Titlebar */
+  .titlebar { display: flex; align-items: center; height: 52px; background: #1c1c1e; padding: 0 16px; -webkit-app-region: drag; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+  .traffic-lights { display: flex; gap: 8px; -webkit-app-region: no-drag; margin-right: 16px; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .dot.close { background: #ff5f56; } .dot.min { background: #ffbd2e; } .dot.max { background: #27c93f; }
+  .dot svg { opacity: 0; width: 8px; height: 8px; stroke: rgba(0,0,0,0.5); stroke-width: 2; }
+  .traffic-lights:hover .dot svg { opacity: 1; }
+
+  .tabs { display: flex; gap: 6px; -webkit-app-region: no-drag; overflow-x: auto; max-width: calc(100% - 200px); }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 14px; background: rgba(255, 255, 255, 0.05); border-radius: 10px; font-size: 12.5px; color: #a1a1aa; cursor: pointer; min-width: 140px; max-width: 200px; transition: 0.2s; }
+  .tab.active { background: rgba(255, 255, 255, 0.15); color: #fff; }
+  .tab-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tab-close { background: transparent; border: none; color: #a1a1aa; width: 16px; height: 16px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .tab-close:hover { background: rgba(255, 95, 86, 0.8); color: white; }
+  .btn-icon { background: transparent; border: none; color: #a1a1aa; width: 32px; height: 32px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; -webkit-app-region: no-drag; margin-left: 8px; }
+  .btn-icon:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+  .btn-icon svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; }
+
+  /* Toolbar */
+  .toolbar { display: flex; align-items: center; gap: 8px; height: 56px; padding: 0 16px; background: #1c1c1e; position: relative; z-index: 10; }
+  .nav-btn { width: 32px; height: 32px; background: transparent; border: none; color: #a1a1aa; cursor: pointer; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+  .nav-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.1); color: #fff; }
+  .nav-btn:disabled { opacity: 0.3; }
+  .nav-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
+  
+  .url-form { flex: 1; margin: 0 8px; }
+  .url-input { width: 100%; height: 38px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 0 16px; color: #fff; outline: none; font-size: 13px; }
+  .url-input:focus { border-color: var(--accent); }
+  
+  .shield { display: flex; align-items: center; gap: 6px; padding: 0 14px; height: 38px; background: rgba(50, 215, 75, 0.1); color: #32d74b; border-radius: 12px; font-weight: 600; font-size: 13px; cursor: pointer; }
+  .shield svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; }
+  .clock { font-family: monospace; font-size: 14px; font-weight: 600; color: #a1a1aa; padding: 0 12px; border-left: 1px solid rgba(255,255,255,0.1); margin-right: 4px;}
+
+  /* MENÚ UNIFICADO (3 Puntos) */
+  .menu-panel { display: none; position: absolute; top: 100px; right: 16px; width: 240px; background: rgba(30, 30, 32, 0.95); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 8px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); z-index: 100; }
+  .menu-panel.active { display: block; animation: scaleIn 0.2s ease-out; }
+  .menu-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; font-size: 13px; color: #fff; cursor: pointer; border-radius: 8px; transition: 0.1s; }
+  .menu-item:hover { background: rgba(255,255,255,0.1); }
+  .menu-item span { color: #a1a1aa; font-size: 11px; }
+  .menu-separator { height: 1px; background: rgba(255,255,255,0.1); margin: 6px 0; }
+
+  /* Paneles (Escudo y Ajustes del Sitio) */
+  .panel { display: none; position: absolute; top: 110px; right: 16px; width: 340px; background: rgba(30, 30, 32, 0.95); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 18px; padding: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); z-index: 100; }
+  .panel.active { display: block; animation: scaleIn 0.2s ease-out; }
+  
+  .panel-header, .modal-header { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .panel-header svg, .modal-header svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
+  
+  .panel-stat { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 12px; color: #a1a1aa; }
+  
+  .zoom-control { display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.3); padding: 6px 12px; border-radius: 12px; margin-bottom: 20px; }
+  .zoom-btn { background: transparent; border: none; color: #fff; font-size: 20px; cursor: pointer; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: 0.2s; }
+  .zoom-btn:hover { background: rgba(255,255,255,0.1); }
+  .zoom-value { font-size: 14px; font-weight: 600; width: 60px; text-align: center; }
+
+  .section-title { font-size: 12px; font-weight: 600; color: #fff; text-transform: uppercase; letter-spacing: 0.5px; margin: 20px 0 12px 0; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px; }
+
+  .permission-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .permission-label { font-size: 13.5px; color: #e5e5ea; }
+  .toggle { position: relative; display: inline-block; width: 44px; height: 24px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; cursor: pointer; inset: 0; background-color: rgba(120, 120, 128, 0.32); transition: .3s; border-radius: 24px; }
+  .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 2px; bottom: 2px; background-color: white; transition: .3s; border-radius: 50%; }
+  input:checked + .slider { background-color: #32d74b; }
+  input:checked + .slider:before { transform: translateX(20px); }
+
+  /* Buscador flotante (Find in Page) */
+  .find-bar { display: none; position: absolute; top: 60px; right: 16px; background: #1c1c1e; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 8px 12px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); z-index: 200; align-items: center; gap: 8px; }
+  .find-bar.active { display: flex; }
+  .find-bar input { background: transparent; border: none; color: #fff; outline: none; width: 150px; font-size: 13px; }
+  .find-bar button { background: transparent; border: none; color: #a1a1aa; cursor: pointer; padding: 4px; border-radius: 4px; }
+  .find-bar button:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .find-count { font-size: 11px; color: #a1a1aa; }
+
+  /* MODALES CENTRADOS */
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 9990; }
+  .modal-overlay.active { display: block; }
+  
+  .settings-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 400px; background: rgba(30, 30, 32, 0.95); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 24px; z-index: 9991; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
+  .settings-modal.active { display: block; animation: modalPop 0.2s ease-out; }
+  @keyframes modalPop { from { transform: translate(-50%, -48%) scale(0.95); opacity: 0; } to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
+
+  .setting-group { margin-bottom: 16px; }
+  .setting-group label { display: block; font-size: 13px; color: #a1a1aa; margin-bottom: 6px; }
+  .setting-group input { width: 100%; height: 40px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 0 12px; color: #fff; }
+  .modal-buttons { display: flex; gap: 10px; margin-top: 24px; }
+  .btn { flex: 1; height: 40px; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; }
+  .btn-save { background: var(--accent); color: #fff; }
+  .btn-reset { background: rgba(255,255,255,0.1); color: #fff; }
+
+  /* Historial */
+  .history-list { max-height: 300px; overflow-y: auto; margin-top: 10px; }
+  .history-item { padding: 10px; background: rgba(255,255,255,0.05); margin-bottom: 6px; border-radius: 8px; cursor: pointer; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .history-item:hover { background: rgba(255,255,255,0.1); }
+  .history-item span { display: block; font-size: 10px; color: #a1a1aa; }
+
+  /* MODAL DE CONTRASEÑA (DevTools) */
+  .devtools-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); z-index: 9999; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s ease; }
+  .devtools-overlay.active { display: flex; opacity: 1; }
+  .devtools-modal { background: rgba(30, 30, 32, 0.95); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 24px; width: 340px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); text-align: center; transform: scale(0.95); transition: transform 0.2s ease; }
+  .devtools-overlay.active .devtools-modal { transform: scale(1); }
+  .devtools-modal h3 { font-size: 18px; margin-bottom: 8px; color: #fff; display: flex; align-items: center; justify-content: center; gap: 8px;}
+  .devtools-modal h3 svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; }
+  .devtools-modal p { font-size: 13px; color: #a1a1aa; margin-bottom: 16px; line-height: 1.4; }
+  .devtools-modal input { width: 100%; height: 42px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 0 14px; color: #fff; font-size: 14px; outline: none; margin-bottom: 8px; transition: 0.2s; }
+  .devtools-modal input:focus { border-color: #0a84ff; }
+  .error-msg { color: #ff453a; font-size: 12px; margin-bottom: 12px; display: none; font-weight: 500; }
+  .error-msg.show { display: block; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+  .btn-cancel { flex: 1; height: 38px; background: rgba(255,255,255,0.1); color: #fff; border: none; border-radius: 10px; cursor: pointer; font-weight: 500; transition: 0.2s; }
+  .btn-cancel:hover { background: rgba(255,255,255,0.2); }
+  .btn-confirm { flex: 1; height: 38px; background: #0a84ff; color: #fff; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; transition: 0.2s; }
+  .btn-confirm:hover { filter: brightness(1.1); }
+
+  .view-container { flex: 1; position: relative; background: #000; }
+  .view-container webview { position: absolute; inset: 0; width: 100%; height: 100%; display: none; }
+  .view-container webview.active { display: flex; }
+</style>
+</head>
+<body>
+  <div class="titlebar">
+    <div class="traffic-lights">
+      <div class="dot close" id="closeBtn"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></div>
+      <div class="dot min" id="minBtn"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></div>
+      <div class="dot max" id="maxBtn"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg></div>
+    </div>
+    <div class="tabs" id="tabs"></div>
+    <button class="btn-icon" id="newTabBtn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+  </div>
+  
+  <div class="toolbar">
+    <button class="nav-btn" id="backBtn" disabled><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+    <button class="nav-btn" id="fwdBtn" disabled><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+    <button class="nav-btn" id="reloadBtn"><svg viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></button>
+    
+    <form class="url-form" id="urlForm">
+      <input type="text" id="urlInput" class="url-input" placeholder="Busca o escribe una URL" autocomplete="off" spellcheck="false">
+    </form>
+    
+    <div class="shield" id="shieldBtn"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span id="blockCount">0</span></div>
+    
+    <button class="nav-btn" id="menuBtn" title="Menú" style="margin-right: 4px;">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="2" fill="currentColor" stroke="none"/></svg>
+    </button>
+
+    <div class="clock" id="clock">00:00</div>
+
+    <!-- PANELES -->
+    <div class="panel" id="shieldsPanel">
+      <div class="panel-header">
+        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Privacidad
+      </div>
+      <div class="panel-stat">Anuncios bloqueados: <span id="panelBlockCount">0</span></div>
+      <div class="panel-stat">Rastreo de huella: <span>Bloqueado</span></div>
+    </div>
+
+    <!-- 🔥 PANEL DE AJUSTES DEL SITIO (AHORA COMPLETO Y FUNCIONAL) -->
+    <div class="panel" id="siteSettingsPanel">
+      <div class="panel-header">
+        <svg viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg> Ajustes del Sitio
+      </div>
+      <div class="panel-stat" id="siteDomainLabel" style="font-weight: bold; color: #fff; margin-bottom: 16px; font-size: 14px;">Cargando...</div>
+      
+      <div class="section-title">Zoom de la Página</div>
+      <div class="zoom-control">
+        <button class="zoom-btn" id="zoomOutBtn">−</button>
+        <span class="zoom-value" id="zoomValue">100%</span>
+        <button class="zoom-btn" id="zoomInBtn">+</button>
+      </div>
+
+      <div class="section-title">Privacidad</div>
+      <div class="permission-row">
+        <span class="permission-label">Bloquear anuncios en este sitio</span>
+        <label class="toggle"><input type="checkbox" id="permAdblock" checked><span class="slider"></span></label>
+      </div>
+
+      <div class="section-title">Permisos</div>
+      <div class="permission-row"><span class="permission-label">Cámara</span><label class="toggle"><input type="checkbox" id="permCamera"><span class="slider"></span></label></div>
+      <div class="permission-row"><span class="permission-label">Micrófono</span><label class="toggle"><input type="checkbox" id="permMic"><span class="slider"></span></label></div>
+      <div class="permission-row"><span class="permission-label">Ubicación</span><label class="toggle"><input type="checkbox" id="permLocation"><span class="slider"></span></label></div>
+      <div class="permission-row"><span class="permission-label">Notificaciones</span><label class="toggle"><input type="checkbox" id="permNotifications"><span class="slider"></span></label></div>
+    </div>
+
+    <!-- MENÚ UNIFICADO -->
+    <div class="menu-panel" id="menuPanel">
+      <div class="menu-item" id="menuNewTab">Nueva pestaña <span>Ctrl+T</span></div>
+      <div class="menu-item" id="menuNewWindow">Nueva ventana <span>Ctrl+N</span></div>
+      <div class="menu-separator"></div>
+      <div class="menu-item" id="menuPersonalize">Personalizar navegador</div>
+      <div class="menu-item" id="menuSiteSettings">Ajustes del sitio</div>
+      <div class="menu-separator"></div>
+      <div class="menu-item" id="menuHistory">Historial</div>
+      <div class="menu-item" id="menuFind">Buscar en página <span>Ctrl+F</span></div>
+      <div class="menu-item" id="menuPrint">Imprimir <span>Ctrl+P</span></div>
+      <div class="menu-separator"></div>
+      <div class="menu-item" id="menuClearData" style="color: #ff5f56;">Borrar datos</div>
+    </div>
+
+    <div class="find-bar" id="findBar">
+      <input type="text" id="findInput" placeholder="Buscar en la página...">
+      <span class="find-count" id="findCount">0/0</span>
+      <button id="findPrev">↑</button><button id="findNext">↓</button><button id="findClose">×</button>
+    </div>
+  </div>
+  
+  <div class="view-container" id="viewContainer"></div>
+
+  <!-- MODALES -->
+  <div class="modal-overlay" id="modalOverlay"></div>
+  
+  <div class="settings-modal" id="settingsModal">
+    <div class="modal-header">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/></svg> Personalizar
+    </div>
+    <div class="setting-group"><label>Color de Fondo</label><input type="color" id="bgColorInput" value="#000000"></div>
+    <div class="setting-group"><label>Imagen de Fondo (URL)</label><input type="text" id="bgImageInput" placeholder="https://..."></div>
+    <div class="setting-group"><label>Color de Acento</label><input type="color" id="accentColorInput" value="#0a84ff"></div>
+    <div class="modal-buttons"><button class="btn btn-reset" id="resetSettingsBtn">Restablecer</button><button class="btn btn-save" id="saveSettingsBtn">Guardar</button></div>
+  </div>
+
+  <div class="settings-modal" id="historyModal" style="width: 500px;">
+    <div class="modal-header">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Historial Reciente
+    </div>
+    <div class="history-list" id="historyList"></div>
+    <div class="modal-buttons"><button class="btn btn-save" onclick="document.getElementById('modalOverlay').click()">Cerrar</button></div>
+  </div>
+
+  <div class="devtools-overlay" id="devtoolsOverlay">
+    <div class="devtools-modal">
+      <h3>
+        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Acceso Restringido
+      </h3>
+      <p>Introduce la contraseña de administrador para inspeccionar el código.</p>
+      <input type="password" id="devtoolsPassInput" placeholder="Contraseña..." autocomplete="off">
+      <div id="devtoolsError" class="error-msg">Contraseña incorrecta</div>
+      <div class="modal-actions">
+        <button id="devtoolsCancelBtn" class="btn-cancel">Cancelar</button>
+        <button id="devtoolsConfirmBtn" class="btn-confirm">Desbloquear</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const tabs = document.getElementById('tabs'), viewContainer = document.getElementById('viewContainer'), urlInput = document.getElementById('urlInput'), blockCount = document.getElementById('blockCount');
+    const shieldBtn = document.getElementById('shieldBtn'), shieldsPanel = document.getElementById('shieldsPanel'), panelBlockCount = document.getElementById('panelBlockCount');
+    const siteSettingsPanel = document.getElementById('siteSettingsPanel'), siteDomainLabel = document.getElementById('siteDomainLabel');
+    const menuBtn = document.getElementById('menuBtn'), menuPanel = document.getElementById('menuPanel');
+    const findBar = document.getElementById('findBar'), findInput = document.getElementById('findInput'), findCount = document.getElementById('findCount');
+    
+    let tabState = [], activeId = null, newtabPath = 'https://www.google.com';
+
+    // RELOJ
+    setInterval(() => { const n = new Date(); document.getElementById('clock').textContent = `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`; }, 1000);
+
+    // CONTADOR
+    setInterval(async () => {
+      try { const s = await window.browserAPI.getStats(); if (s) { blockCount.textContent = s.blockedCount; if (shieldsPanel.classList.contains('active')) panelBlockCount.textContent = s.blockedCount; } } catch (e) {}
+    }, 500);
+
+    // CERRAR PANELES
+    document.addEventListener('click', (e) => {
+      if (!shieldBtn.contains(e.target) && !shieldsPanel.contains(e.target)) shieldsPanel.classList.remove('active');
+      if (!menuBtn.contains(e.target) && !menuPanel.contains(e.target) && !siteSettingsPanel.contains(e.target)) {
+        menuPanel.classList.remove('active');
+        siteSettingsPanel.classList.remove('active');
+      }
+    });
+
+    shieldBtn.onclick = () => { shieldsPanel.classList.toggle('active'); siteSettingsPanel.classList.remove('active'); menuPanel.classList.remove('active'); panelBlockCount.textContent = blockCount.textContent; };
+    menuBtn.onclick = () => { menuPanel.classList.toggle('active'); shieldsPanel.classList.remove('active'); siteSettingsPanel.classList.remove('active'); };
+
+    // ACCIONES DEL MENÚ
+    document.getElementById('menuNewTab').onclick = () => { createTab(); menuPanel.classList.remove('active'); };
+    document.getElementById('menuNewWindow').onclick = () => { window.browserAPI.newWindow(); menuPanel.classList.remove('active'); };
+    
+    document.getElementById('menuPersonalize').onclick = () => { 
+      menuPanel.classList.remove('active');
+      document.getElementById('settingsModal').classList.add('active'); 
+      document.getElementById('modalOverlay').classList.add('active'); 
+    };
+
+    // 🔥 LÓGICA DE AJUSTES DEL SITIO (CORREGIDA Y COMPLETA)
+    document.getElementById('menuSiteSettings').onclick = () => {
+      menuPanel.classList.remove('active');
+      siteSettingsPanel.classList.add('active');
+      
+      const s = tabState.find(s => s.id === activeId);
+      let domain = "Nueva Pestaña";
+      
+      if (s && s.wv.getURL()) {
+        try {
+          const url = new URL(s.wv.getURL());
+          if (url.protocol.startsWith('http')) {
+            domain = url.hostname;
+          }
+        } catch(e) {}
+      }
+
+      siteDomainLabel.textContent = domain;
+      
+      // Cargar Zoom
+      if (s && s.wv.getURL() && !s.wv.getURL().includes('newtab.html')) {
+        document.getElementById('zoomValue').textContent = `${Math.round(Math.pow(1.2, s.wv.getZoomLevel()) * 100)}%`;
+      } else {
+        document.getElementById('zoomValue').textContent = `100%`;
+      }
+
+      // Cargar Permisos
+      if (domain !== "Nueva Pestaña") {
+        const perms = JSON.parse(localStorage.getItem('site_perms') || '{}');
+        const sitePerms = perms[domain] || {};
+        
+        document.getElementById('permAdblock').checked = sitePerms.adblock !== false; 
+        document.getElementById('permCamera').checked = sitePerms.camera || false;
+        document.getElementById('permMic').checked = sitePerms.microphone || false;
+        document.getElementById('permLocation').checked = sitePerms.geolocation || false;
+        document.getElementById('permNotifications').checked = sitePerms.notifications || false;
+      }
+    };
+
+    document.getElementById('menuPrint').onclick = () => { 
+      const s = tabState.find(s => s.id === activeId); 
+      if(s) s.wv.print({ silent: false, printBackground: true }); 
+      menuPanel.classList.remove('active'); 
+    };
+
+    document.getElementById('menuFind').onclick = () => { findBar.classList.add('active'); findInput.focus(); menuPanel.classList.remove('active'); };
+    document.getElementById('menuClearData').onclick = () => { window.browserAPI.clearData(); menuPanel.classList.remove('active'); };
+
+    window.browserAPI.onDataCleared(() => {
+      alert("Caché, cookies e historial borrados correctamente.");
+      localStorage.removeItem('browsing_history');
+      tabState.forEach(s => s.wv.reload());
+    });
+
+    // HISTORIAL
+    document.getElementById('menuHistory').onclick = () => {
+      menuPanel.classList.remove('active');
+      const history = JSON.parse(localStorage.getItem('browsing_history') || '[]');
+      const list = document.getElementById('historyList');
+      list.innerHTML = history.length ? '' : '<div style="color:#a1a1aa; text-align:center; padding:20px;">No hay historial</div>';
+      history.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        div.innerHTML = `${item.title} <span>${item.url}</span>`;
+        div.onclick = () => { createTab(item.url); document.getElementById('modalOverlay').click(); };
+        list.appendChild(div);
+      });
+      document.getElementById('modalOverlay').classList.add('active');
+      document.getElementById('historyModal').classList.add('active');
+    };
+
+    function saveToHistory(title, url) {
+      if (url.includes('newtab.html')) return;
+      let history = JSON.parse(localStorage.getItem('browsing_history') || '[]');
+      history = history.filter(h => h.url !== url);
+      history.unshift({ title, url, time: Date.now() });
+      if (history.length > 50) history.pop();
+      localStorage.setItem('browsing_history', JSON.stringify(history));
+    }
+
+    // BUSCADOR FLOTANTE
+    document.getElementById('findClose').onclick = () => { findBar.classList.remove('active'); const s = tabState.find(s=>s.id===activeId); if(s) s.wv.stopFindInPage('clearSelection'); };
+    findInput.oninput = () => { const s = tabState.find(s=>s.id===activeId); if(!s || !findInput.value) return; s.wv.findInPage(findInput.value); };
+    document.getElementById('findNext').onclick = () => { const s = tabState.find(s=>s.id===activeId); if(s) s.wv.findInPage(findInput.value, { forward: true, findNext: true }); };
+    document.getElementById('findPrev').onclick = () => { const s = tabState.find(s=>s.id===activeId); if(s) s.wv.findInPage(findInput.value, { forward: false, findNext: true }); };
+
+    // ZOOM Y PERMISOS
+    document.getElementById('zoomInBtn').onclick = () => { 
+      const s = tabState.find(s=>s.id===activeId); 
+      if(s) { 
+        s.wv.setZoomLevel(s.wv.getZoomLevel() + 0.5); 
+        document.getElementById('zoomValue').textContent = `${Math.round(Math.pow(1.2, s.wv.getZoomLevel()) * 100)}%`;
+      }
+    };
+    document.getElementById('zoomOutBtn').onclick = () => { 
+      const s = tabState.find(s=>s.id===activeId); 
+      if(s) { 
+        s.wv.setZoomLevel(s.wv.getZoomLevel() - 0.5); 
+        document.getElementById('zoomValue').textContent = `${Math.round(Math.pow(1.2, s.wv.getZoomLevel()) * 100)}%`;
+      }
+    };
+    
+    function savePermission(p, c) {
+      const s = tabState.find(s=>s.id===activeId); if(!s) return;
+      const d = siteDomainLabel.textContent; if(d === "Nueva Pestaña") return;
+      
+      const perms = JSON.parse(localStorage.getItem('site_perms') || '{}');
+      if (!perms[d]) perms[d] = {};
+      perms[d][p] = c; localStorage.setItem('site_perms', JSON.stringify(perms));
+      
+      // Si es una API soportada por el main.js, se envía
+      if (p !== 'adblock' && p !== 'notifications') {
+        window.browserAPI.setSitePermission({ domain: d, permission: p, allow: c });
+      }
+    }
+    
+    document.getElementById('permAdblock').onchange = (e) => savePermission('adblock', e.target.checked);
+    document.getElementById('permCamera').onchange = (e) => savePermission('camera', e.target.checked);
+    document.getElementById('permMic').onchange = (e) => savePermission('microphone', e.target.checked);
+    document.getElementById('permLocation').onchange = (e) => savePermission('geolocation', e.target.checked);
+    document.getElementById('permNotifications').onchange = (e) => savePermission('notifications', e.target.checked);
+
+    // PERSONALIZACIÓN
+    const settingsModal = document.getElementById('settingsModal'), modalOverlay = document.getElementById('modalOverlay');
+    function loadSettings() {
+      document.documentElement.style.setProperty('--accent', localStorage.getItem('accentColor') || '#0a84ff');
+      document.getElementById('bgColorInput').value = localStorage.getItem('bgColor') || '#000000';
+      document.getElementById('bgImageInput').value = localStorage.getItem('bgImage') || '';
+      document.getElementById('accentColorInput').value = localStorage.getItem('accentColor') || '#0a84ff';
+    }
+    modalOverlay.onclick = () => { settingsModal.classList.remove('active'); modalOverlay.classList.remove('active'); document.getElementById('historyModal').classList.remove('active'); };
+    document.getElementById('saveSettingsBtn').onclick = () => {
+      localStorage.setItem('bgColor', document.getElementById('bgColorInput').value);
+      localStorage.setItem('bgImage', document.getElementById('bgImageInput').value);
+      localStorage.setItem('accentColor', document.getElementById('accentColorInput').value);
+      loadSettings(); modalOverlay.click();
+      tabState.forEach(s => { if (s.wv.getURL().includes('newtab.html')) s.wv.reload(); });
+    };
+    document.getElementById('resetSettingsBtn').onclick = () => { localStorage.clear(); loadSettings(); modalOverlay.click(); tabState.forEach(s => { if (s.wv.getURL().includes('newtab.html')) s.wv.reload(); }); };
+
+    // CONTRASEÑA DEVTOOLS
+    const devtoolsOverlay = document.getElementById('devtoolsOverlay');
+    const devtoolsPassInput = document.getElementById('devtoolsPassInput');
+    const devtoolsError = document.getElementById('devtoolsError');
+    let pendingInspectData = null;
+
+    window.browserAPI.onAskDevtoolsPassword((data) => {
+      pendingInspectData = data;
+      devtoolsOverlay.classList.add('active');
+      devtoolsPassInput.value = '';
+      devtoolsError.classList.remove('show');
+      setTimeout(() => devtoolsPassInput.focus(), 100);
+    });
+
+    document.getElementById('devtoolsConfirmBtn').onclick = () => {
+      if (!pendingInspectData) return;
+      window.browserAPI.verifyPassword({ password: devtoolsPassInput.value, wcId: pendingInspectData.wcId, x: pendingInspectData.x, y: pendingInspectData.y });
+    };
+
+    window.browserAPI.onPasswordResult((success) => {
+      if (success) { devtoolsOverlay.classList.remove('active'); pendingInspectData = null; } 
+      else { devtoolsError.classList.add('show'); devtoolsPassInput.value = ''; devtoolsPassInput.focus(); }
+    });
+
+    document.getElementById('devtoolsCancelBtn').onclick = () => { devtoolsOverlay.classList.remove('active'); pendingInspectData = null; };
+    devtoolsPassInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('devtoolsConfirmBtn').click(); });
+
+    // PESTAÑAS
+    async function init() { try { newtabPath = await window.browserAPI.getNewtabPath(); } catch(e) {} loadSettings(); createTab(); }
+    async function createTab(url) {
+      if (!url) url = newtabPath;
+      const id = 'tab-' + Date.now();
+      const tabEl = document.createElement('div'); tabEl.className = 'tab'; tabEl.innerHTML = `<span class="tab-title">Cargando...</span><button class="tab-close">×</button>`; tabs.appendChild(tabEl);
+      const wv = document.createElement('webview'); wv.setAttribute('partition', 'persist:main'); wv.setAttribute('useragent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'); wv.className = 'webview'; wv.setAttribute('src', url); viewContainer.appendChild(wv);
+      const state = { id, wv, tabEl }; tabState.push(state);
+      tabEl.onclick = () => activate(id); tabEl.querySelector('.tab-close').onclick = (e) => { e.stopPropagation(); closeTab(id); };
+      
+      wv.addEventListener('page-title-updated', (e) => { 
+        tabEl.querySelector('.tab-title').textContent = e.title; 
+        if(activeId === id) saveToHistory(e.title, wv.getURL());
+      });
+      wv.addEventListener('did-navigate', () => { if(activeId===id) urlInput.value = wv.getURL(); updateNav(); });
+      wv.addEventListener('did-navigate-in-page', () => { if(activeId===id) urlInput.value = wv.getURL(); updateNav(); });
+      
+      wv.addEventListener('found-in-page', (e) => {
+        if(e.result.matches !== undefined) findCount.textContent = `${e.result.activeMatchOrdinal}/${e.result.matches}`;
+      });
+      
+      activate(id);
+    }
+    function activate(id) {
+      activeId = id;
+      tabState.forEach(s => { s.tabEl.classList.toggle('active', s.id === id); s.wv.classList.toggle('active', s.id === id); });
+      const s = tabState.find(s => s.id === id); if(s) { urlInput.value = s.wv.getURL() || ''; updateNav(); s.wv.focus(); }
+    }
+    function closeTab(id) {
+      const idx = tabState.findIndex(s => s.id === id); if(idx===-1) return;
+      tabState[idx].tabEl.remove(); tabState[idx].wv.remove(); tabState.splice(idx, 1);
+      if (tabState.length === 0) createTab(); else if (activeId === id) activate(tabState[Math.max(0, idx-1)].id);
+    }
+    function updateNav() {
+      const s = tabState.find(s => s.id === activeId); if(!s) return;
+      document.getElementById('backBtn').disabled = !s.wv.canGoBack(); document.getElementById('fwdBtn').disabled = !s.wv.canGoForward();
+    }
+    
+    document.getElementById('urlForm').onsubmit = (e) => {
+      e.preventDefault(); let t = urlInput.value.trim(); if(!t) return;
+      let url = /^[a-zA-Z]+:\/\//.test(t) ? t : (/^[\w.-]+\.[a-z]{2,}/i.test(t) ? 'https://'+t : 'https://www.google.com/search?q='+encodeURIComponent(t));
+      const s = tabState.find(s => s.id === activeId); if(s) s.wv.loadURL(url); urlInput.blur();
+    };
+    document.getElementById('backBtn').onclick = () => { const s = tabState.find(s => s.id === activeId); if(s&&s.wv.canGoBack()) s.wv.goBack(); };
+    document.getElementById('fwdBtn').onclick = () => { const s = tabState.find(s => s.id === activeId); if(s&&s.wv.canGoForward()) s.wv.goForward(); };
+    document.getElementById('reloadBtn').onclick = () => { const s = tabState.find(s => s.id === activeId); if(s) s.wv.reload(); };
+    document.getElementById('newTabBtn').onclick = () => createTab();
+    document.getElementById('closeBtn').onclick = () => window.browserAPI.close();
+    document.getElementById('minBtn').onclick = () => window.browserAPI.minimize();
+    document.getElementById('maxBtn').onclick = () => window.browserAPI.maximize();
+
+    // ATAJOS
+    document.addEventListener('keydown', (e) => {
+      const mod = e.ctrlKey || e.metaKey;
+      if (mod && e.key === 't') { e.preventDefault(); createTab(); }
+      if (mod && e.key === 'n') { e.preventDefault(); window.browserAPI.newWindow(); }
+      if (mod && e.key === 'l') { e.preventDefault(); urlInput.focus(); urlInput.select(); }
+      if (mod && e.key === 'f') { e.preventDefault(); findBar.classList.add('active'); findInput.focus(); }
+      if (mod && e.key === 'p') { e.preventDefault(); const s = tabState.find(s => s.id === activeId); if(s) s.wv.print({ silent: false, printBackground: true }); }
+      if (e.key === 'Escape') { findBar.classList.remove('active'); menuPanel.classList.remove('active'); devtoolsOverlay.classList.remove('active'); siteSettingsPanel.classList.remove('active'); }
+    });
+
+    init();
+  </script>
+</body>
+</html>

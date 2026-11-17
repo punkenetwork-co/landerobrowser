@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Nueva Pestaña</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { 
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif; 
+    background-color: #000; background-size: cover; background-position: center; background-repeat: no-repeat;
+    color: #fff; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; transition: background 0.5s ease;
+  }
+  h1 { font-size: 42px; font-weight: 600; margin-bottom: 40px; letter-spacing: -0.5px; color: #fff; text-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+  
+  .search-form { width: 100%; max-width: 680px; position: relative; margin-bottom: 60px; z-index: 5; }
+  .search-input { 
+    width: 100%; height: 54px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 27px; padding: 0 24px; color: #fff; font-size: 16px; outline: none; transition: 0.3s; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  }
+  .search-input:focus { background: rgba(255, 255, 255, 0.15); border-color: var(--accent, #0a84ff); box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.2); }
+  .search-input::placeholder { color: rgba(255, 255, 255, 0.6); }
+
+  .shortcuts { display: flex; gap: 32px; flex-wrap: wrap; justify-content: center; max-width: 900px; z-index: 5; }
+  .shortcut { display: flex; flex-direction: column; align-items: center; gap: 12px; cursor: pointer; transition: transform 0.2s; width: 90px; }
+  .shortcut:hover { transform: scale(1.05); }
+  .icon-wrapper {
+    width: 80px; height: 80px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 20px; display: flex; align-items: center; justify-content: center; transition: 0.2s; box-shadow: 0 10px 20px rgba(0,0,0,0.3); backdrop-filter: blur(10px);
+  }
+  .shortcut:hover .icon-wrapper { background: rgba(255, 255, 255, 0.2); border-color: rgba(255, 255, 255, 0.4); }
+  .icon-wrapper svg { width: 40px; height: 40px; }
+  .shortcut span { font-size: 13px; font-weight: 500; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+</style>
+</head>
+<body>
+  <h1 id="titleText">Landero Browser</h1>
+  
+  <form class="search-form" id="searchForm">
+    <input type="text" id="searchInput" class="search-input" placeholder="Navega por internet o escribe una URL..." autocomplete="off" autofocus>
+  </form>
+
+  <div class="shortcuts">
+    <div class="shortcut" onclick="window.location.href='https://www.youtube.com'">
+      <div class="icon-wrapper"><svg viewBox="0 0 24 24" fill="#FF0000"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></div><span>YouTube</span>
+    </div>
+    <div class="shortcut" onclick="window.location.href='https://web.whatsapp.com'">
+      <div class="icon-wrapper"><svg viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></div><span>WhatsApp</span>
+    </div>
+    <div class="shortcut" onclick="window.location.href='https://mail.google.com'">
+      <div class="icon-wrapper"><svg viewBox="0 0 24 24" fill="#EA4335"><path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L12 9.59l8.073-6.097C21.691 2.279 24 3.434 24 5.457z"/></svg></div><span>Gmail</span>
+    </div>
+    <div class="shortcut" onclick="window.location.href='https://www.wikipedia.org'">
+      <div class="icon-wrapper"><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.893 8.422l-3.27 7.871c-.147.356-.412.533-.794.533-.236 0-.44-.074-.611-.222-.171-.148-.276-.34-.316-.577l-1.864-5.321-1.864 5.321c-.04.237-.145.429-.316.577-.171.148-.375.222-.611.222-.382 0-.647-.177-.794-.533l-3.27-7.871c-.082-.2-.123-.392-.123-.577 0-.341.16-.511.478-.511.195 0 .333.052.414.155l2.91 7.026 1.862-5.321c.04-.237.145-.429.316-.577.171-.148.375-.222.611-.222.236 0 .44.074.611.222.171.148.276.34.316.577l1.864 5.321 2.91-7.026c.081-.103.219-.155.414-.155.318 0 .478.17.478.511 0 .185-.041.377-.123.577z"/></svg></div><span>Wikipedia</span>
+    </div>
+    <div class="shortcut" onclick="window.location.href='https://web.telegram.org'">
+      <div class="icon-wrapper"><svg viewBox="0 0 24 24" fill="#0088cc"><path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.141-.259.259-.529.259l.192-2.718 5.567-5.03c.24-.213-.054-.333-.373-.121l-6.88 4.332-2.957-.924c-.643-.203-.656-.642.134-.952l11.549-4.455c.534-.194 1.007.128.797.637z"/></svg></div><span>Telegram</span>
+    </div>
+  </div>
+
+  <script>
+    // Cargar colores globales
+    function loadSettings() {
+      const bgColor = localStorage.getItem('bgColor') || '#000000';
+      const bgImage = localStorage.getItem('bgImage') || '';
+      const accentColor = localStorage.getItem('accentColor') || '#0a84ff';
+
+      if (bgImage) {
+        document.body.style.backgroundImage = `url('${bgImage}')`;
+        document.body.style.backgroundColor = '';
+      } else {
+        document.body.style.backgroundImage = 'radial-gradient(circle at 50% 30%, #1c1c1e, #000)';
+        document.body.style.backgroundColor = bgColor;
+      }
+      document.documentElement.style.setProperty('--accent', accentColor);
+    }
+
+    document.getElementById('searchForm').onsubmit = (e) => {
+      e.preventDefault();
+      let t = document.getElementById('searchInput').value.trim(); if(!t) return;
+      let url = /^[a-zA-Z]+:\/\//.test(t) ? t : (/^[\w.-]+\.[a-z]{2,}/i.test(t) ? 'https://'+t : 'https://www.google.com/search?q='+encodeURIComponent(t));
+      window.location.href = url; 
+    };
+
+    loadSettings();
+  </script>
+</body>
+</html>

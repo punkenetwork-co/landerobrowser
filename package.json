@@ -1,0 +1,46 @@
+{
+  "name": "landerobrowser",
+  "version": "1.0.0",
+  "main": "main.js",
+  "description": "Navegador privado basado en Chromium con bloqueo de anuncios",
+  "author": "punknetwork-co",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win",
+    "publish:win": "electron-builder --win --publish always"
+  },
+  "dependencies": {
+    "@ghostery/adblocker-electron": "^2.20.1",
+    "@ghostery/adblocker-electron-preload": "^2.20.1",
+    "cross-fetch": "^4.0.0",
+    "electron-updater": "^6.3.9"
+  },
+  "devDependencies": {
+    "electron": "github:castlabs/electron-releases#v36.2.1+wvcus",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.punknetwork.landerobrowser",
+    "productName": "Lander Browser",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "electronDownload": {
+      "mirror": "https://github.com/castlabs/electron-releases/releases/download/"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "punknetwork-co",
+      "repo": "landerobrowser"
+    }
+  }
+}
